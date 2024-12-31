@@ -2,6 +2,7 @@ from __future__ import annotations
 
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from nocodb.Table import Table
     from nocodb import NocoDB
@@ -17,7 +18,7 @@ class DataType:
 
 
 class Column:
-    def __init__(self, noco_db: "NocoDB",**kwargs) -> None:
+    def __init__(self, noco_db: "NocoDB", **kwargs) -> None:
         self.noco_db = noco_db
         self.title = kwargs["title"]
         self.column_id = kwargs["id"]
@@ -31,7 +32,7 @@ class Column:
 
         if "colOptions" in kwargs and "fk_related_model_id" in kwargs["colOptions"]:
             self.linked_table_id = kwargs["colOptions"]["fk_related_model_id"]
-            
+
     def get_linked_table(self) -> Table:
         if hasattr(self, "linked_table_id"):
             return self.noco_db.get_table(self.linked_table_id)
@@ -41,25 +42,46 @@ class Column:
     @staticmethod
     def get_id_metadata() -> list[dict]:
         return [
-            {'title': 'Id', 'column_name': 'id', 'uidt': str(Column.DataType.ID),
-             'dt': 'int4', 'np': '11', 'ns': '0', 'clen': None,
-             'pk': True, 'pv': None, 'rqd': True, 'ct': 'int(11)', 'ai': True,
-             'dtx': 'integer', 'dtxp': '11', },
-            {'title': 'Title', 'column_name': 'title', 'uidt': str(Column.DataType.SingleLineText),
-             'dt': 'character varying', 'np': None, 'ns': None, 'clen': '45',
-             'pk': False, 'pv': True, 'rqd': False, 'ct': 'varchar(45)', 'ai': False,
-             'dtx': 'specificType', 'dtxp': '45', }
+            {
+                "title": "Id",
+                "column_name": "id",
+                "uidt": str(Column.DataType.ID),
+                "dt": "int4",
+                "np": "11",
+                "ns": "0",
+                "clen": None,
+                "pk": True,
+                "pv": None,
+                "rqd": True,
+                "ct": "int(11)",
+                "ai": True,
+                "dtx": "integer",
+                "dtxp": "11",
+            },
+            {
+                "title": "Title",
+                "column_name": "title",
+                "uidt": str(Column.DataType.SingleLineText),
+                "dt": "character varying",
+                "np": None,
+                "ns": None,
+                "clen": "45",
+                "pk": False,
+                "pv": True,
+                "rqd": False,
+                "ct": "varchar(45)",
+                "ai": False,
+                "dtx": "specificType",
+                "dtxp": "45",
+            },
         ]
 
     class DataType:
         Formula = DataType("Formula")
-
         LinkToAnotherRecord = DataType("LinkToAnotherRecord")
         Links = DataType("Links")
-
         Lookup = DataType("Lookup")
         Rollup = DataType("Rollup")
-
         Attachment = DataType("Attachment")
         AutoNumber = DataType("AutoNumber")
         Barcode = DataType("Barcode")
@@ -85,6 +107,7 @@ class Column:
         LongText = DataType("LongText")
         MultiSelect = DataType("MultiSelect")
         Number = DataType("Number")
+        Order = DataType("Order")
         Percent = DataType("Percent")
         PhoneNumber = DataType("PhoneNumber")
         QrCode = DataType("QrCode")
@@ -103,5 +126,3 @@ class Column:
                 return getattr(cls, uidt)
             else:
                 raise Exception(f"Invalid datatype {uidt}")
-
-

@@ -4,12 +4,14 @@ from nocodb.Record import Record
 from nocodb.Column import Column, DataType
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from nocodb.Base import Base
     from nocodb import NocoDB
 
 
 import logging
+
 _logger = logging.getLogger(__name__)
 _logger.addHandler(logging.NullHandler())
 
@@ -30,13 +32,11 @@ class Table:
         return {k: v for k, v in m.items() if not k in extra_keys}
 
     def get_number_of_records(self) -> int:
-        r = self.noco_db.call_noco(
-            path=f"tables/{self.table_id}/records/count")
+        r = self.noco_db.call_noco(path=f"tables/{self.table_id}/records/count")
         return r.json()["count"]
 
     def get_columns(self, include_system: bool = False) -> list[Column]:
-        r = self.noco_db.call_noco(
-            path=f"meta/tables/{self.table_id}")
+        r = self.noco_db.call_noco(path=f"meta/tables/{self.table_id}")
         cols = [Column(noco_db=self.noco_db, **f) for f in r.json()["columns"]]
         if include_system:
             return cols
@@ -44,8 +44,7 @@ class Table:
             return [c for c in cols if not c.system and not c.primary_key]
 
     def get_columns_hash(self) -> str:
-        r = self.noco_db.call_noco(
-            path=f"meta/tables/{self.table_id}/columns/hash")
+        r = self.noco_db.call_noco(path=f"meta/tables/{self.table_id}/columns/hash")
         return r.json()["hash"]
 
     def get_column_by_title(self, title: str) -> Column:
@@ -54,25 +53,28 @@ class Table:
         except StopIteration:
             raise Exception(f"Column with title {title} not found!")
 
-    def create_column(self, column_name: str,
-                      title: str, data_type: DataType = Column.DataType.SingleLineText,
-                      **kwargs) -> Column:
+    def create_column(
+        self,
+        column_name: str,
+        title: str,
+        data_type: DataType = Column.DataType.SingleLineText,
+        **kwargs,
+    ) -> Column:
         kwargs["column_name"] = column_name
         kwargs["title"] = title
         kwargs["uidt"] = str(data_type)
 
-        r = self.noco_db.call_noco(path=f"meta/tables/{self.table_id}/columns",
-                                   method="POST",
-                                   json=kwargs)
+        r = self.noco_db.call_noco(
+            path=f"meta/tables/{self.table_id}/columns", method="POST", json=kwargs
+        )
         return self.get_column_by_title(title=title)
 
-    def duplicate(self,
-                  exclude_data: bool = True,
-                  exclude_views: bool = True) -> None:
-        r = self.noco_db.call_noco(path=f"meta/duplicate/{self.base_id}/table/{self.table_id}",
-                                   method="POST",
-                                   json={"excludeData": exclude_data,
-                                         "excludeViews": exclude_views})
+    def duplicate(self, exclude_data: bool = True, exclude_views: bool = True) -> None:
+        r = self.noco_db.call_noco(
+            path=f"meta/duplicate/{self.base_id}/table/{self.table_id}",
+            method="POST",
+            json={"excludeData": exclude_data, "excludeViews": exclude_views},
+        )
         _logger.info(f"Table {self.title} duplicated")
         return
 
@@ -91,8 +93,7 @@ class Table:
         return list(dict(sorted(duplicates.items(), reverse=True)).values())
 
     def delete(self) -> bool:
-        r = self.noco_db.call_noco(path=f"meta/tables/{self.table_id}",
-                                   method="DELETE")
+        r = self.noco_db.call_noco(path=f"meta/tables/{self.table_id}", method="DELETE")
         _logger.info(f"Table {self.title} deleted")
         return r.json()
 
@@ -112,10 +113,10 @@ class Table:
         while True:
 
             r = self.noco_db.call_noco(
-                path=f"tables/{self.table_id}/records", params=params)
+                path=f"tables/{self.table_id}/records", params=params
+            )
 
-            records.extend([Record(self, **r)
-                            for r in r.json()["list"]])
+            records.extend([Record(self, **r) for r in r.json()["list"]])
 
             if r.json()["pageInfo"]["isLastPage"]:
                 break
@@ -127,25 +128,42 @@ class Table:
         return records
 
     def get_record(self, record_id: int) -> Record:
-        r = self.noco_db.call_noco(
-            path=f"tables/{self.table_id}/records/{record_id}")
+        r = self.noco_db.call_noco(path=f"tables/{self.table_id}/records/{record_id}")
         return Record(self, **r.json())
 
     def get_records_by_field_value(self, field: str, value) -> list[Record]:
         return self.get_records(params={"where": f"({field},eq,{value})"})
 
     def create_record(self, **kwargs) -> Record:
-        r = self.noco_db.call_noco(path=f"tables/{self.table_id}/records",
-                                   method="POST",
-                                   json=kwargs)
+        r = self.noco_db.call_noco(
+            path=f"tables/{self.table_id}/records", method="POST", json=kwargs
+        )
         return self.get_record(record_id=r.json()["Id"])
 
     def create_records(self, records: list[dict]) -> list[Record]:
-        r = self.noco_db.call_noco(path=f"tables/{self.table_id}/records",
-                                   method="POST",
-                                   json=records)
-        ids_string = ','.join([str(d["Id"]) for d in r.json()])
+        r = self.noco_db.call_noco(
+            path=f"tables/{self.table_id}/records", method="POST", json=records
+        )
+        ids_string = ",".join([str(d["Id"]) for d in r.json()])
         return self.get_records(params={"where": f"(Id,in,{ids_string})"})
 
     def get_base(self) -> Base:
         return self.noco_db.get_base(self.base_id)
+
+    def delete_record(self, record_id: int) -> bool:
+        r = self.noco_db.call_noco(
+            path=f"tables/{self.table_id}/records",
+            method="DELETE",
+            json={"Id": record_id},
+        )
+
+        return r.json()
+
+    def update_record(self, **kwargs) -> None:
+        r = self.noco_db.call_noco(
+            path=f"tables/{self.table_id}/records",
+            method="PATCH",
+            json=kwargs,
+        )
+
+        return r.json()

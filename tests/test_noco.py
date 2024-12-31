@@ -115,8 +115,16 @@ class Test02Tables(TestData, unittest.TestCase):
         self.assertEqual(self.table.get_number_of_records(), 0)
 
         # get_columns
-        self.assertEqual(len(self.table.get_columns(include_system=False)), 1)
-        self.assertEqual(len(self.table.get_columns(include_system=True)), 6)
+        cols = self.table.get_columns(include_system=False)
+        self.assertEqual(len(cols), 1)
+        self.assertEqual(cols[0].title, 'Title')
+
+        all_cols = self.table.get_columns(include_system=True)
+        self.assertEqual(len(all_cols), 7)
+
+        all_col_titles = [c.title for c in all_cols]
+        for t in ['Id', 'Title', 'CreatedAt', 'UpdatedAt', 'nc_created_by', 'nc_updated_by', 'nc_order']:
+            self.assertIn(t, all_col_titles)
 
         # get_columns_hash
         # get_column_by_title

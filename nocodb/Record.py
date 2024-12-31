@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Any
 
 from nocodb.Column import Column
+
 if TYPE_CHECKING:
     from nocodb.Table import Table
 
@@ -15,24 +16,32 @@ class Record:
         self.metadata = kwargs
 
     def link_record(self, column: Column, link_record: "Record") -> bool:
-        path = (f"tables/{self.table.table_id}/links/" +
-                f"{column.column_id}/records/{self.record_id}")
-        r = self.noco_db.call_noco(path=path,
-                                   method="POST", json={"Id": link_record.record_id})
+        path = (
+            f"tables/{self.table.table_id}/links/"
+            + f"{column.column_id}/records/{self.record_id}"
+        )
+        r = self.noco_db.call_noco(
+            path=path, method="POST", json={"Id": link_record.record_id}
+        )
 
         return r.json()
 
     def link_records(self, column: Column, link_records: list["Record"]) -> bool:
-        path = (f"tables/{self.table.table_id}/links/" +
-                f"{column.column_id}/records/{self.record_id}")
-        r = self.noco_db.call_noco(path=path,
-                                   method="POST", json=[{"Id": l.record_id} for l in link_records])
+        path = (
+            f"tables/{self.table.table_id}/links/"
+            + f"{column.column_id}/records/{self.record_id}"
+        )
+        r = self.noco_db.call_noco(
+            path=path, method="POST", json=[{"Id": l.record_id} for l in link_records]
+        )
 
         return r.json()
 
     def get_linked_records(self, column: Column) -> list[Record]:
-        path = (f"tables/{self.table.table_id}/links/" +
-                f"{column.column_id}/records/{self.record_id}")
+        path = (
+            f"tables/{self.table.table_id}/links/"
+            + f"{column.column_id}/records/{self.record_id}"
+        )
         r = self.noco_db.call_noco(path=path)
 
         if "list" in r.json():
@@ -64,5 +73,7 @@ class Record:
         if not isinstance(value_list, list):
             raise Exception("Invalid field value")
 
-        return [self.noco_db.get_file(p["signedPath"], encoding=encoding)
-                for p in value_list]
+        return [
+            self.noco_db.get_file(p["signedPath"], encoding=encoding)
+            for p in value_list
+        ]
