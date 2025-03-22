@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 import logging
 
 _logger = logging.getLogger(__name__)
-_logger.addHandler(logging.NullHandler())
 
 
 class Table:
@@ -184,3 +183,66 @@ class Table:
             json=records,
         )
         return self.get_records_by_id([r_id["Id"] for r_id in r.json()])
+        
+    def create_linked_column(self, 
+                          column_name: str,
+                          target_table: "Table",
+                          link_type: str = "hm") -> Column:
+        """
+        Create a new column that links to another table.
+        
+        Args:
+            column_name: The name of the new column
+            target_table: The table to link to
+            link_type: The type of link - "hm" (has many) or "mm" (many to many)
+            
+        Returns:
+            The newly created column
+        """
+        # Check if the column already exists to avoid duplicate column errors
+        existing_cols = self.get_columns()
+        for col in existing_cols:
+            if col.title == column_name:
+                # Column already exists, return it
+                return col
+            
+        # Create a relationship column directly using NocoDB's API
+        # First get the correct ID columns for both tables
+        self_id_col = None
+        target_id_col = None
+        
+        for col in self.get_columns(include_system=True):
+            if col.title == "Id":
+                self_id_col = col
+                break
+        
+        for col in target_table.get_columns(include_system=True):
+            if col.title == "Id":
+                target_id_col = col
+                break
+        
+        if not self_id_col or not target_id_col:
+            raise Exception("Could not find ID columns for both tables")
+        
+        # Create the Links column for has-many relationships
+        ltar_payload = {
+            "title": column_name,
+            "uidt": "Links",
+            "parentId": self.table_id,  # Required for NocoDB API
+            "childId": target_table.table_id,  # Required for NocoDB API
+            "type": link_type,  # Required by NocoDB API
+        }
+            
+        # Create the column
+        r = self.noco_db.call_noco(
+            path=f"meta/tables/{self.table_id}/columns",
+            method="POST",
+            json=ltar_payload
+        )
+        
+        # Try to get the newly created column
+        for col in self.get_columns():
+            if col.title == column_name:
+                return col
+
+        return None
